@@ -1,0 +1,39 @@
+server:
+  name: "project-user"
+  port: ":8080"
+zap:
+  debugFileName: "/Users/umikok/Desktop/GoLand/ms_project/logs/debug/project-debug.log"
+  infoFileName: "/Users/umikok/Desktop/GoLand/ms_project/logs/info/project-info.log"
+  warnFileName: "/Users/umikok/Desktop/GoLand/ms_project/logs/error/project-error.log"
+  maxSize: 500
+  maxAge: 28
+  MaxBackups: 3
+redis:
+  host: "192.168.1.107"
+  port: 6380
+  password: ""
+  db: 0
+grpc:
+  addr: "127.0.0.1:8881"
+  name: "user"
+  version: "1.0.0"
+  weight: 2
+etcd:
+  addrs:
+    - "192.168.1.107:12379"
+mysql:
+  username: root
+  password: root
+  host: 192.168.1.107
+  port: 3309
+  db: msproject
+jwt:
+  accessExp: 7
+  refreshExp: 14
+  accessSecret: ms_project
+  refreshSecret: ms_project
+jaeger:
+  endpoint: "http://192.168.1.107:14268/api/traces"  # Jaeger Collector 端点
+  serviceName: "project-user"                         # 服务名称
+  environment: "dev"                                 # 部署环境
+  enabled: true                                      # 是否启用链路追踪

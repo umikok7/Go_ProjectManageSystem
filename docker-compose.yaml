@@ -1,0 +1,216 @@
+#version: '3'
+services:
+  mysql:
+    container_name: mysql8
+    image: mysql:${MYSQL_VERSION} # 使用的镜像，版本从 .env 文件读取
+    restart: always
+    ports:
+      - 3309:3306
+    environment:
+      TZ: Asia/Shanghai
+      MYSQL_ROOT_PASSWORD: root # MySQL root 用户密码
+      MYSQL_DATABASE: msproject # 创建默认数据库
+    volumes:
+      - ${MYSQL_DIR}/data:/var/lib/mysql # 数据文件持久化
+      - ${MYSQL_DIR}/conf:/etc/mysql/conf.d/ # 配置文件目录挂载
+      - ${MYSQL_DIR}/logs:/logs # 日志文件挂载
+    command:
+      --default-authentication-plugin=mysql_native_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_general_ci
+      --explicit_defaults_for_timestamp=true
+      --lower_case_table_names=1
+      --bind-address=0.0.0.0  # 允许外部连接
+  Redis:
+    container_name: redis6
+    image: redis:${REDIS_VERSION}
+    restart: always
+    volumes:
+      - ${REDIS_DIR}/data:/data
+      - ${REDIS_DIR}/conf/redis.conf:/etc/redis/redis.conf
+    ports:
+      - ${REDIS_PORT}:6379
+    command: redis-server /etc/redis/redis.conf 
+#  Etcd:
+#    container_name: etcd3
+#    image: bitnami/etcd:${ETCD_VERSION}
+#    deploy:
+#      replicas: 1
+#      restart_policy:
+#        condition: on-failure
+#    environment:
+#      - ALLOW_NONE_AUTHENTICATION=yes
+#    privileged: true
+#    volumes:
+#      - ${ETCD_DIR}/data:/bitnami/etcd/data
+#    ports:
+#      - "12379:2379"
+#      - "12380:2380"
+  Etcd:
+    container_name: etcd3
+    image: bitnami/etcd:${ETCD_VERSION}
+    restart: always  # 重要：删除 deploy 配置，改为这个
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_LISTEN_CLIENT_URLS=http://0.0.0.0:2379
+      - ETCD_ADVERTISE_CLIENT_URLS=http://0.0.0.0:2379
+      - ETCD_LISTEN_PEER_URLS=http://0.0.0.0:2380
+      - ETCD_INITIAL_ADVERTISE_PEER_URLS=http://0.0.0.0:2380
+      - ETCD_INITIAL_CLUSTER=etcd3=http://0.0.0.0:2380
+      - ETCD_INITIAL_CLUSTER_STATE=new
+      - ETCD_NAME=etcd3
+    volumes:
+      - ${ETCD_DIR}/data:/bitnami/etcd/data
+    ports:
+      - "12379:2379"
+      - "12380:2380"
+  Nacos:
+    container_name: nacos-standalone
+    image: nacos/nacos-server:v2.2.0
+    restart: always
+    environment:
+      - MODE=standalone
+      - JVM_XMS=512m
+      - JVM_MAX=512m
+      - JVM_XMN=256m
+      - SPRING_DATASOURCE_PLATFORM=mysql
+      - MYSQL_SERVICE_HOST=mysql
+      - MYSQL_SERVICE_PORT=3306
+      - MYSQL_SERVICE_USER=root
+      - MYSQL_SERVICE_PASSWORD=root
+      - MYSQL_SERVICE_DB=nacos
+    privileged: true
+    volumes:
+      - ${NACOS_DIR}/data:/home/nacos/data
+      - ${NACOS_DIR}/logs:/home/nacos/logs
+      - ${NACOS_DIR}/conf:/home/nacos/conf
+#      - nacos-conf:/home/nacos/conf
+    ports:
+      - 8848:8848
+      - 9848:9848
+      - 9849:9849
+  Jaeger:
+    container_name: jaeger
+    image: jaegertracing/all-in-one:1.41
+    restart: always
+    environment:
+      - COLLECTOR_ZIPKIN_HTTP_PORT=9411
+      - SPAN_STORAGE_TYPE=badger
+      - BADGER_EPHEMERAL=${BADGER_EPHEMERAL}
+      - BADGER_DIRECTORY_VALUE=/badger/data
+      - BADGER_DIRECTORY_KEY=/badger/key
+    privileged: true
+    volumes:
+      - ${JAEGER_DIR}:/badger
+    ports:
+      - 5775:5775/udp
+      - 6831:6831/udp
+      - 6832:6832/udp
+      - 5778:5778
+      - 16686:16686
+      - 14268:14268
+      - 14269:14269
+      - 9411:9411
+#volumes:
+#  nacos-conf:
+#    driver: local
+#    driver_opts:
+#      type: 'none'
+#      device: '${NACOS_DIR}/conf'
+#      o: 'bind'
+  kafka:
+    container_name: kafka
+    image: obsidiandynamics/kafka
+    restart: "always"
+    ports:
+      - "2181:2181"
+      - "9092:9092"
+    environment:
+      KAFKA_LISTENERS: "INTERNAL://:29092,EXTERNAL://:9092"
+      KAFKA_ADVERTISED_LISTENERS: "INTERNAL://kafka:29092,EXTERNAL://192.168.1.107:9092"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "INTERNAL"
+      KAFKA_ZOOKEEPER_SESSION_TIMEOUT: "6000"
+      KAFKA_RESTART_ATTEMPTS: "10"
+      KAFKA_RESTART_DELAY: "5"
+      ZOOKEEPER_AUTOPURGE_PURGE_INTERVAL: "0"
+      # 尝试不同的内存配置
+      KAFKA_HEAP_OPTS: "-Xms128m -Xmx256m"
+      ZOOKEEPER_HEAP_OPTS: "-Xms64m -Xmx128m"
+      # 添加 GC 配置
+      KAFKA_JVM_PERFORMANCE_OPTS: "-server -XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:+ExplicitGCInvokesConcurrent -Djava.awt.headless=true"
+    # 容器资源限制
+    mem_limit: 512m
+    shm_size: 128m
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+  kafdrop:
+    container_name: kafdrop
+    image: obsidiandynamics/kafdrop
+    restart: "always"
+    ports:
+      - "9000:9000"
+    environment:
+      KAFKA_BROKERCONNECT: "kafka:29092"
+      # JVM_OPTS: "-Xms16M -Xmx48M -Xss180K -XX:-TieredCompilation -XX:+UseStringDeduplication -noverify"
+      JVM_OPTS: "-Xms32M -Xmx128M -Xss512K -XX:-TieredCompilation -XX:+UseStringDeduplication"
+    depends_on:
+      - kafka
+  es:
+    container_name: es
+    image: elasticsearch:8.6.0
+    restart: always  # ✅ 添加重启策略
+    volumes:
+      - ${ES_DIR}/data:/usr/share/elasticsearch/data
+      - ${ES_DIR}/logs:/usr/share/elasticsearch/logs
+      - ${ES_DIR}/plugins:/usr/share/elasticsearch/plugins
+    ports:
+      - 9200:9200
+      - 9300:9300
+    environment:
+      - node.name=es
+      - cluster.name=elasticsearch
+      - discovery.type=single-node
+      - bootstrap.memory_lock=false
+      - xpack.security.enabled=false
+      - xpack.security.http.ssl.enabled=false
+      - xpack.security.transport.ssl.enabled=false
+      # 添加 JVM 内存配置
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    # ✅ 调整资源限制
+    mem_limit: 1g
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+  kibana:
+    image: kibana:8.6.0
+    container_name: kibana
+    depends_on:
+      - es
+    environment:
+      SERVER_NAME: kibana
+      SERVER_HOST: "0.0.0.0"
+      ELASTICSEARCH_HOSTS: http://es:9200
+    ports:
+      - 5601:5601
+  logstash:
+    image: logstash:8.6.0
+    container_name: logstash
+    volumes:
+      - ${LOGSTASH_DIR}/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+      - ${LOGSTASH_DIR}/logstash.yml:/usr/share/logstash/config/logstash.yml
+      - ${LOGSTASH_DIR}/log/:/home/public/
+    ports:
+      - '5044:5044'
+      - '50000:50000/tcp'
+      - '50000:50000/udp'
+      - '9600:9600'
+    environment:
+      LS_JAVA_OPTS: -Xms1024m -Xmx1024m
+      TZ: Asia/Shanghai
+      MONITORING_ENABLED: false
+    depends_on:
+      - es

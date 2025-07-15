@@ -1,0 +1,18 @@
+server:
+  name: "project-api"
+  port: ":80"
+zap:
+  debugFileName: "/Users/umikok/Desktop/GoLand/ms_project/logs/debug/project-debug.log"
+  infoFileName: "/Users/umikok/Desktop/GoLand/ms_project/logs/info/project-info.log"
+  warnFileName: "/Users/umikok/Desktop/GoLand/ms_project/logs/error/project-error.log"
+  maxSize: 500
+  maxAge: 28
+  MaxBackups: 3
+etcd:
+  addrs:
+    - "192.168.1.107:12379"
+jaeger:
+  endpoint: "http://192.168.1.107:14268/api/traces"  # Jaeger Collector 端点
+  serviceName: "project-api"                         # 服务名称
+  environment: "dev"                                 # 部署环境
+  enabled: true                                      # 是否启用链路追踪

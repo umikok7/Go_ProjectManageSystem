@@ -2,20 +2,22 @@ package project
 
 import (
 	"context"
+	"net/http"
+	"path"
+	"strconv"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/copier"
-	"net/http"
-	"os"
-	"path"
 	"test.com/project-api/pkg/model"
 	"test.com/project-api/pkg/model/pro"
 	"test.com/project-api/pkg/model/tasks"
 	common "test.com/project-common"
 	"test.com/project-common/errs"
-	"test.com/project-common/fs"
+	"test.com/project-common/min"
 	"test.com/project-common/tms"
 	"test.com/project-grpc/task"
-	"time"
+	"test.com/project-project/config"
 )
 
 type HandlerTask struct {
@@ -362,17 +364,45 @@ func (t *HandlerTask) uploadFiles(c *gin.Context) {
 	// 假设只上传一个文件
 	uploadFile := file["file"][0]
 	// 第一种 没有达成分片的条件
-	key := ""
+	key := "msproject/" + req.Filename
+	minioClient, err := min.New(config.C.MinioConfig.Endpoint,
+		config.C.MinioConfig.AccessKey,
+		config.C.MinioConfig.SecretKey,
+		false) // SSL配置
+	if err != nil {
+		c.JSON(http.StatusOK, result.Fail(-999, err.Error()))
+		return
+	}
 	if req.TotalChunks == 1 {
 		// 不分片,直接存储
-		path := "upload/" + req.ProjectCode + "/" + req.TaskCode + "/" + tms.FormatYMD(time.Now())
-		if !fs.IsExist(path) {
-			os.MkdirAll(path, os.ModePerm) // 递归创建目录
+		//path := "upload/" + req.ProjectCode + "/" + req.TaskCode + "/" + tms.FormatYMD(time.Now())
+		//if !fs.IsExist(path) {
+		//	os.MkdirAll(path, os.ModePerm) // 递归创建目录
+		//}
+		//dst := path + "/" + req.Filename
+		//key = dst
+		//
+		//err := c.SaveUploadedFile(uploadFile, dst) // 文件保存
+		//if err != nil {
+		//	c.JSON(http.StatusOK, result.Fail(-999, err.Error()))
+		//	return
+		//}
+		open, err := uploadFile.Open() // 打开上传的文件
+		if err != nil {
+			c.JSON(http.StatusOK, result.Fail(-999, err.Error()))
+			return
 		}
-		dst := path + "/" + req.Filename
-		key = dst
+		defer open.Close()
+		buf := make([]byte, req.TotalSize)
+		open.Read(buf)
 
-		err := c.SaveUploadedFile(uploadFile, dst) // 文件保存
+		_, err = minioClient.Put(context.Background(),
+			config.C.MinioConfig.BucketName,
+			req.Filename,
+			buf,
+			int64(req.TotalSize),
+			uploadFile.Header.Get("Content-Type"),
+		)
 		if err != nil {
 			c.JSON(http.StatusOK, result.Fail(-999, err.Error()))
 			return
@@ -380,16 +410,16 @@ func (t *HandlerTask) uploadFiles(c *gin.Context) {
 	}
 	if req.TotalChunks > 1 {
 		// 分片上传，先把每次的存储起来，再追加
-		path := "upload/" + req.ProjectCode + "/" + req.TaskCode + "/" + tms.FormatYMD(time.Now())
-		if !fs.IsExist(path) {
-			os.MkdirAll(path, os.ModePerm)
-		}
-		fileName := path + "/" + req.Identifier                                                // 临时文件名
-		openFile, err := os.OpenFile(fileName, os.O_CREATE|os.O_APPEND|os.O_RDWR, os.ModePerm) // 以追加模式打开临时文件
-		if err != nil {
-			c.JSON(http.StatusOK, result.Fail(-999, err.Error()))
-			return
-		}
+		//path := "upload/" + req.ProjectCode + "/" + req.TaskCode + "/" + tms.FormatYMD(time.Now())
+		//if !fs.IsExist(path) {
+		//	os.MkdirAll(path, os.ModePerm)
+		//}
+		//fileName := path + "/" + req.Identifier                                                // 临时文件名
+		//openFile, err := os.OpenFile(fileName, os.O_CREATE|os.O_APPEND|os.O_RDWR, os.ModePerm) // 以追加模式打开临时文件
+		//if err != nil {
+		//	c.JSON(http.StatusOK, result.Fail(-999, err.Error()))
+		//	return
+		//}
 		open, err := uploadFile.Open() // 打开上传的分片文件
 		if err != nil {
 			c.JSON(http.StatusOK, result.Fail(-999, err.Error()))
@@ -398,20 +428,31 @@ func (t *HandlerTask) uploadFiles(c *gin.Context) {
 		defer open.Close()
 		buf := make([]byte, req.CurrentChunkSize)
 		open.Read(buf)
-		openFile.Write(buf) // 将缓冲区的数据写入临时文件。
-		openFile.Close()
-		key = fileName
+		formatInt := strconv.FormatInt(int64(req.ChunkNumber), 10)
+		_, err = minioClient.Put(context.Background(),
+			config.C.MinioConfig.BucketName,
+			req.Filename+"_"+formatInt,
+			buf,
+			int64(req.CurrentChunkSize),
+			uploadFile.Header.Get("Content-Type"),
+		)
+		if err != nil {
+			c.JSON(http.StatusOK, result.Fail(-999, err.Error()))
+			return
+		}
 		if req.TotalChunks == req.ChunkNumber {
-			// 最后一个分片了，进行改名
-			newPath := path + "/" + req.Filename
-			key = newPath
-			os.Rename(fileName, newPath)
+			// 最后一个分片了，进行合并
+			_, err := minioClient.Compose(context.Background(), config.C.MinioConfig.BucketName, req.Filename, req.TotalChunks)
+			if err != nil {
+				c.JSON(http.StatusOK, result.Fail(-999, err.Error()))
+				return
+			}
 		}
 	}
 	//调用服务 存入file表
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
-	fileUrl := "http://localhost/" + key
+	fileUrl := config.C.MinioConfig.Endpoint + key
 	msg := &task.TaskFileReqMessage{
 		TaskCode:         req.TaskCode,
 		ProjectCode:      req.ProjectCode,
@@ -432,10 +473,11 @@ func (t *HandlerTask) uploadFiles(c *gin.Context) {
 		}
 	}
 	c.JSON(http.StatusOK, result.Success(gin.H{
-		"file":        key,
-		"hash":        "",
-		"key":         key,
-		"url":         "http://localhost/" + key,
+		"file": key,
+		"hash": "",
+		"key":  key,
+		//"url":         "http://localhost/" + key,
+		"url":         "http://" + config.C.MinioConfig.Endpoint + "/" + key,
 		"projectName": req.ProjectName,
 	}))
 

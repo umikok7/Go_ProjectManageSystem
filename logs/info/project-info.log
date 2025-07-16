@@ -4090,3 +4090,24 @@
 {"level":"ERROR","time":"2025-07-15T17:49:42.892+0800","caller":"discovery/discovery.go:118","msg":"register failed","error":"context deadline exceeded"}
 {"level":"INFO","time":"2025-07-15T17:50:37.436+0800","caller":"discovery/resolver.go:102","msg":"Resolver 构建成功","serviceName":"user","keyPrefix":"/user/1.0.0/"}
 {"level":"INFO","time":"2025-07-15T17:50:37.474+0800","caller":"discovery/resolver.go:102","msg":"Resolver 构建成功","serviceName":"project","keyPrefix":"/project/1.0.0/"}
+{"level":"INFO","time":"2025-07-16T14:19:06.322+0800","caller":"discovery/resolver.go:102","msg":"Resolver 构建成功","serviceName":"project","keyPrefix":"/project/1.0.0/"}
+{"level":"INFO","time":"2025-07-16T14:19:06.339+0800","caller":"discovery/resolver.go:102","msg":"Resolver 构建成功","serviceName":"user","keyPrefix":"/user/1.0.0/"}
+{"level":"INFO","time":"2025-07-16T14:19:26.950+0800","caller":"discovery/resolver.go:102","msg":"Resolver 构建成功","serviceName":"user","keyPrefix":"/user/1.0.0/"}
+{"level":"INFO","time":"2025-07-16T14:24:49.804+0800","caller":"discovery/resolver.go:102","msg":"Resolver 构建成功","serviceName":"user","keyPrefix":"/user/1.0.0/"}
+{"level":"INFO","time":"2025-07-16T15:07:30.184+0800","caller":"discovery/resolver.go:102","msg":"Resolver 构建成功","serviceName":"user","keyPrefix":"/user/1.0.0/"}
+{"level":"INFO","time":"2025-07-16T15:07:30.245+0800","caller":"discovery/resolver.go:102","msg":"Resolver 构建成功","serviceName":"project","keyPrefix":"/project/1.0.0/"}
+{"level":"INFO","time":"2025-07-16T15:07:30.357+0800","caller":"discovery/resolver.go:102","msg":"Resolver 构建成功","serviceName":"user","keyPrefix":"/user/1.0.0/"}
+{"level":"INFO","time":"2025-07-16T16:20:02.251+0800","caller":"discovery/resolver.go:102","msg":"Resolver 构建成功","serviceName":"user","keyPrefix":"/user/1.0.0/"}
+{"level":"INFO","time":"2025-07-16T16:21:00.564+0800","caller":"discovery/resolver.go:102","msg":"Resolver 构建成功","serviceName":"user","keyPrefix":"/user/1.0.0/"}
+{"level":"INFO","time":"2025-07-16T16:21:00.616+0800","caller":"discovery/resolver.go:102","msg":"Resolver 构建成功","serviceName":"project","keyPrefix":"/project/1.0.0/"}
+{"level":"INFO","time":"2025-07-16T16:34:07.255+0800","caller":"discovery/resolver.go:102","msg":"Resolver 构建成功","serviceName":"user","keyPrefix":"/user/1.0.0/"}
+{"level":"INFO","time":"2025-07-16T17:04:40.172+0800","caller":"discovery/resolver.go:102","msg":"Resolver 构建成功","serviceName":"user","keyPrefix":"/user/1.0.0/"}
+{"level":"INFO","time":"2025-07-16T17:04:40.216+0800","caller":"discovery/resolver.go:102","msg":"Resolver 构建成功","serviceName":"project","keyPrefix":"/project/1.0.0/"}
+{"level":"INFO","time":"2025-07-16T17:04:40.299+0800","caller":"discovery/resolver.go:102","msg":"Resolver 构建成功","serviceName":"user","keyPrefix":"/user/1.0.0/"}
+{"level":"INFO","time":"2025-07-16T17:20:55.323+0800","caller":"discovery/resolver.go:102","msg":"Resolver 构建成功","serviceName":"user","keyPrefix":"/user/1.0.0/"}
+{"level":"INFO","time":"2025-07-16T17:21:51.383+0800","caller":"discovery/resolver.go:102","msg":"Resolver 构建成功","serviceName":"user","keyPrefix":"/user/1.0.0/"}
+{"level":"INFO","time":"2025-07-16T17:21:51.396+0800","caller":"discovery/resolver.go:102","msg":"Resolver 构建成功","serviceName":"project","keyPrefix":"/project/1.0.0/"}
+{"level":"INFO","time":"2025-07-16T17:40:44.021+0800","caller":"discovery/resolver.go:102","msg":"Resolver 构建成功","serviceName":"user","keyPrefix":"/user/1.0.0/"}
+{"level":"INFO","time":"2025-07-16T17:40:44.037+0800","caller":"discovery/resolver.go:102","msg":"Resolver 构建成功","serviceName":"project","keyPrefix":"/project/1.0.0/"}
+{"level":"INFO","time":"2025-07-16T17:47:00.714+0800","caller":"discovery/resolver.go:102","msg":"Resolver 构建成功","serviceName":"user","keyPrefix":"/user/1.0.0/"}
+{"level":"INFO","time":"2025-07-16T17:47:00.727+0800","caller":"discovery/resolver.go:102","msg":"Resolver 构建成功","serviceName":"project","keyPrefix":"/project/1.0.0/"}

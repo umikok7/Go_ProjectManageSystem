@@ -22,6 +22,8 @@ type Config struct {
 	JwtConfig    *JwtConfig
 	DbConfig     *DbConfig
 	JaegerConfig *JaegerConfig
+	KafkaConfig  *KafkaConfig
+	MinioConfig  *MinioConfig
 }
 
 type ServerConfig struct {
@@ -66,6 +68,18 @@ type JaegerConfig struct {
 	ServiceName string // 服务名称
 	Environment string // 部署环境
 	Enabled     bool   // 是否启用链路追踪
+}
+
+type KafkaConfig struct {
+	Addr  string
+	Topic string
+}
+
+type MinioConfig struct {
+	Endpoint   string
+	AccessKey  string
+	SecretKey  string
+	BucketName string
 }
 
 func InitConfig() *Config {
@@ -134,6 +148,8 @@ func (c *Config) ReLoadAllConfig() {
 	c.InitJwtConfig()
 	c.InitDbConfig()
 	c.ReadJaegerConfig()
+	c.ReadKafkaConfig()
+	c.ReadMinioConfig()
 	// 重新创建相关的客户端
 	c.ReConnRedis()
 	c.ReConnMysql()
@@ -238,4 +254,20 @@ func (c *Config) ReadJaegerConfig() {
 	jc.Environment = c.viper.GetString("jaeger.environment")
 	jc.Enabled = c.viper.GetBool("jaeger.enabled")
 	c.JaegerConfig = jc
+}
+
+func (c *Config) ReadKafkaConfig() {
+	kc := &KafkaConfig{}
+	kc.Addr = c.viper.GetString("kafka.addr")
+	kc.Topic = c.viper.GetString("kafka.topic")
+	c.KafkaConfig = kc
+}
+
+func (c *Config) ReadMinioConfig() {
+	mc := &MinioConfig{}
+	mc.AccessKey = c.viper.GetString("minio.accessKey")
+	mc.SecretKey = c.viper.GetString("minio.secretKey")
+	mc.Endpoint = c.viper.GetString("minio.endPoint")
+	mc.BucketName = c.viper.GetString("minio.bucketName")
+	c.MinioConfig = mc
 }

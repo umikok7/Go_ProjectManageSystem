@@ -161,7 +161,7 @@ services:
   es:
     container_name: es
     image: elasticsearch:8.6.0
-    restart: always  # ✅ 添加重启策略
+    restart: always  # 添加重启策略
     volumes:
       - ${ES_DIR}/data:/usr/share/elasticsearch/data
       - ${ES_DIR}/logs:/usr/share/elasticsearch/logs
@@ -179,7 +179,7 @@ services:
       - xpack.security.transport.ssl.enabled=false
       # 添加 JVM 内存配置
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-    # ✅ 调整资源限制
+    # 调整资源限制
     mem_limit: 1g
     ulimits:
       nofile:
@@ -214,3 +214,14 @@ services:
       MONITORING_ENABLED: false
     depends_on:
       - es
+  minio:
+    container_name: minio
+    image: bitnami/minio:2023
+    ports:
+      - '9009:9000'
+      - '9001:9001'
+    environment:
+      - MINIO_ROOT_USER=admin
+      - MINIO_ROOT_PASSWORD=admin123456
+    volumes:
+      - '${MINIO_DIR}/data:/data'
